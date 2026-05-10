@@ -1,6 +1,6 @@
 /* -----------------------------------------
-    Contributors: Kevin Usuanlele / Scott
-    ID's: 3103649 / 
+    Contributors: Kevin Usuanlele / Scott Weaver
+    ID's: 3103649 / 3144661
     Date: May 9, 2026
     Program: userclean.c
     Description:
