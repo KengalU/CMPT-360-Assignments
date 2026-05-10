@@ -10,21 +10,13 @@
 # Variables
 CC = gcc          # C Compiler
 CFLAGS = -Wall -g # Compiler flags
-FILES = userclean.c
 
-TARGET = userclean
-SRC = userclean.c
-OBJ = $(SRC:.c=.o)
+all: userclean
 
-all: $(TARGET)
-
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+userclean: userclean.c
+	gcc $(CC) $(CFLAGS) userclean.c -o userclean
 
 .PHONY: clean
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f userclean
     
