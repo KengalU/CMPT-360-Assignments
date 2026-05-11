@@ -1,7 +1,7 @@
-# CMPT 360 - A
+# CMPT 360 - Assignment 1
 Name: Kevin Usuanlele / Scott Weaver
 ID:  3103649 / 3144661
-Date: May 7, 2026
+Date: May 10, 2026
 # 1. Academic Integrity
 We certify that this submission represents entirely our own work.
 # 2. Overview
