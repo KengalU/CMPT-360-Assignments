@@ -21,6 +21,9 @@
 
 // Validation Helper Functions
 bool is_valid_first(char *username)
+/*
+    Checks if the first letter is lowercase
+*/
 {
     return islower(username[0]);
 }
@@ -109,11 +112,14 @@ int main ()
     char username[BUFFER], *old_username, *new_username;
 
     // Get username
-    fgets(username, sizeof(username), stdin);
+    if (fgets(username, sizeof(username), stdin) == NULL)
+    {
+        return 1;
+    }
     username[strcspn(username, "\n")] = '\0';
 
     // Alloc mem and save a copy
-    old_username = strdup(username); // alloc mem and save original username
+    old_username = malloc(strlen(username) + 1); // alloc mem and save original username
     new_username = malloc(BUFFER); // alloc mem and save for clean
     strcpy(new_username, username);
 
