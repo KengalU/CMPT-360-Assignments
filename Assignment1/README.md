@@ -11,10 +11,7 @@ as such, if not, the program attempts to fix the username using predefined rules
 If no valid transformation is possible, the program deems the input as invalid
 and unfixable
 # 3. Build
-make - compiles userclean
-make vg - runs valgrind
-make check - runs sample inputs
-make clean - removes build
+/
 # 4. Run
 /
 # 5. Logic Summary
