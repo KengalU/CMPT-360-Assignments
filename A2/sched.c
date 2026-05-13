@@ -1,9 +1,11 @@
 /*
- * Student Name: ____________________________________________
- * Student ID:   ____________________________________________
- * Date:         ____________________________________________
- * File:         ____________________________________________
- * Description:  ____________________________________________
+ * Student Name: Kevin Usuanlele / Scott Weaver
+ * Student ID:   3103649 / 3144661
+ * Date:         May 13, 2026
+ * File:         sched.c
+ * Description:  Read a workload file that lists processes by process ID, arrival time,
+ *               and required CPU burst and simulates execution on a single CPU printing
+ *               both a timeline of execution and detailed scheduling metrics
  */
 
 #define _POSIX_C_SOURCE 200809L
