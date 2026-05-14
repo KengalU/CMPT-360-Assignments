@@ -6,6 +6,7 @@
  * Description:  Read a workload file that lists processes by process ID, arrival time,
  *               and required CPU burst and simulates execution on a single CPU printing
  *               both a timeline of execution and detailed scheduling metrics
+ * Reference(s): strncmp() - https://www.w3schools.com/c/ref_string_strncmp.php
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -13,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sched.h"
+#include "stdbool.h"
 
 static void usage(const char* prog){
     /* one-line usage only (per spec) */
@@ -26,8 +28,66 @@ static void usage(const char* prog){
 */
 int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path){
     (void)argc; (void)argv; (void)cfg; (void)in_path;
-    fprintf(stderr, "TODO: parse_args() not implemented\n");
-    return 1;
+    bool quantum = false;
+    char *value;
+
+    // Check if the number of args is valid
+    if (argc < 3 || argc > 4)
+    {
+        usage(argv[0]);
+        return 1;
+    }
+
+    // Parse through args => ./sched --policy=FCFS --in=W1.txt
+    for (int i = 1; i < argc; i++) // start at 1 to skip program name
+    {
+        value = strchr(argv[i], '='); // find '=' in arg and point to value after it
+        if (value != NULL) // if '=' is found
+        {
+            value++; // move pointer to FCFS/RR or path
+        }
+        else // input not valid => ./sched --policyFCFS --inW1.txt
+        {
+            usage(argv[0]);
+            return 1;
+        }
+
+        // Read policy value
+        if (strncmp(argv[i], "--policy=", 9) == 0) // compare first 9 chars ("--policy=") with arg to check if it's policy arg
+        {
+            if (strcmp(value, "FCFS") == 0) cfg->policy = POL_FCFS;
+            else if (strcmp(value, "RR" == 0)) cfg->policy = POL_RR;
+            else usage(argv[0]); return 1;
+        }
+
+        // Read Path
+        else if (strncmp(argv[i], "--in=", 5) == 0)
+        {
+            *in_path = value; // value now should point to path
+        }
+
+        // Read Quantum
+        else if (strncmp(argv[i], "--quantum=", 10) == 0)
+        {
+            // Validate quantum value
+            //
+            //
+            //
+
+            cfg->quantum = NULL;
+            quantum = true;
+        }
+        else
+        {
+            usage(argv[0]);
+            return 1;
+        }
+
+        // Validate flag combos
+        if (cfg->policy == POL_FCFS && quantum) usage(argv[0]); return 1;
+        if (cfg->policy == POL_RR && !quantum) usage(argv[0]); return 1;
+    }
+    return 0;
 }
 
 /* TODO: read "PID ARRIVAL CPU_TIME", ignore lines starting with '#', validate:
