@@ -69,14 +69,23 @@ int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path){
         // Read Quantum
         else if (strncmp(argv[i], "--quantum=", 10) == 0)
         {
-            // Validate quantum value
-            //
-            //
-            //
-
-            cfg->quantum = NULL;
+            for (char* c = value; *c != '\0'; c++) // check if value is only digits
+            {
+                if (*c < '0' || *c > '9')
+                {
+                    usage(argv[0]);
+                    return 1;
+                }
+            }
+            cfg->quantum = atoi(value);
+            if (cfg->quantum <= 0) // quantum must be > 0
+            {
+                usage(argv[0]);
+                return 1;
+            }
             quantum = true;
         }
+
         else
         {
             usage(argv[0]);
