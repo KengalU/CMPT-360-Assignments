@@ -27,12 +27,11 @@ static void usage(const char* prog){
    On error: print usage() and return non-zero.
 */
 int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path){
-    (void)argc; (void)argv; (void)cfg; (void)in_path;
-    bool quantum = false;
+    bool quantum = false, policy = false, path = false;
     char *value;
 
     // Check if the number of args is valid
-    if (argc < 3 || argc > 4)
+    if (argc < 3)
     {
         usage(argv[0]);
         return 1;
@@ -56,14 +55,16 @@ int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path){
         if (strncmp(argv[i], "--policy=", 9) == 0) // compare first 9 chars ("--policy=") with arg to check if it's policy arg
         {
             if (strcmp(value, "FCFS") == 0) cfg->policy = POL_FCFS;
-            else if (strcmp(value, "RR" == 0)) cfg->policy = POL_RR;
-            else usage(argv[0]); return 1;
+            else if (strcmp(value, "RR") == 0) cfg->policy = POL_RR;
+            else {usage(argv[0]); return 1;}
+            policy = true;
         }
 
         // Read Path
         else if (strncmp(argv[i], "--in=", 5) == 0)
         {
             *in_path = value; // value now should point to path
+            path = true;
         }
 
         // Read Quantum
@@ -91,11 +92,11 @@ int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path){
             usage(argv[0]);
             return 1;
         }
-
-        // Validate flag combos
-        if (cfg->policy == POL_FCFS && quantum) usage(argv[0]); return 1;
-        if (cfg->policy == POL_RR && !quantum) usage(argv[0]); return 1;
     }
+    // Validate flag combos
+    if (!policy || !path) {usage(argv[0]); return 1;}
+    if (cfg->policy == POL_FCFS && quantum) {usage(argv[0]); return 1;}
+    if (cfg->policy == POL_RR && !quantum) {usage(argv[0]); return 1;}
     return 0;
 }
 
