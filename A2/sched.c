@@ -21,12 +21,15 @@ static void usage(const char* prog){
     fprintf(stderr, "Usage: %s --policy=FCFS|RR [--quantum=N] --in=FILE\n", prog);
 }
 
-/* TODO: strict CLI
-   Required: --policy=FCFS|RR, --in=FILE
-   Optional: --quantum=N (required iff RR; N>0)
-   On error: print usage() and return non-zero.
+int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path)
+/*
+    Purpose: Parse command line args and fill in cfg and in_path with values
+    Params: argc: number of command line args, argv: array of command line arg strings
+            cfg: pointer to sim_cfg_t struct to hold policy and quantum values
+            in_path: pointer to char* to hold path value
+    Return: 0 on success, calls usage() and returns 1 on error (invalid args or combos)
 */
-int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path){
+{
     bool quantum = false, policy = false, path = false;
     char *value;
 
