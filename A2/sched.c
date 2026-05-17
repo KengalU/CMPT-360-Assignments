@@ -7,6 +7,7 @@
  *               and required CPU burst and simulates execution on a single CPU printing
  *               both a timeline of execution and detailed scheduling metrics
  * Reference(s): strncmp() - https://www.w3schools.com/c/ref_string_strncmp.php
+ *               strtok() - https://www.w3schools.com/c/ref_string_strtok.php
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -15,6 +16,10 @@
 #include <string.h>
 #include "sched.h"
 #include "stdbool.h"
+
+// Macros
+#define BUFFER 256
+#define DELIMS " \t\n" // Seperate fields at: space, tab, or newline
 
 static void usage(const char* prog){
     /* one-line usage only (per spec) */
@@ -106,10 +111,78 @@ int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path)
 /* TODO: read "PID ARRIVAL CPU_TIME", ignore lines starting with '#', validate:
    pid>=0, arrival>=0, cpu>0. Sort by (arrival, pid). Return 0 on success.
 */
-int load_workload(const char* path, job_t** jobs, int* n){
-    (void)path; (void)jobs; (void)n;
-    fprintf(stderr, "TODO: load_workload() not implemented\n");
-    return 1;
+int load_workload(const char* path, job_t** jobs, int* n)
+/*
+    Purpose: Read a workload file and populate a dyn array of jobs
+    Params: path - path to file
+            jobs - array of job_t structs
+            n - number of jobs
+    Return: 0 on success, 1 on error
+*/
+{
+    // Read file in path
+    FILE *fp = fopen(path, "r");
+    if (fp == NULL) {perror("Error opening file"); return 1;}
+
+    // Read line by line
+    char line[BUFFER];
+    *jobs = NULL; // initialize array to store jobs
+    *n = 0;
+
+    while (fgets(line, BUFFER, fp))
+    {
+        if (line[0] == '#' || line[0] == '\n') continue; // skip headers and blank lines in file
+
+        // Break valid lines into PID, Arrival, CPU_Time
+        char *pid_tok = strtok(line, DELIMS); 
+        char *arrival_tok = strtok(NULL, DELIMS); // NULL - pick up where prev strtok left off
+        char *cpu_time_tok = strtok(NULL, DELIMS);
+
+        // Validate tokens
+        if (pid_tok == NULL || arrival_tok == NULL || cpu_time_tok == NULL)
+        {
+            fprintf(stderr, "Error: Broken Process\n");
+            free(*jobs);
+            fclose(fp);
+            return 1;
+        }
+
+        // Convert tokens to int
+        int pid = atoi(pid_tok);
+        int arrival = atoi(arrival_tok);
+        int cpu_time = atoi(cpu_time_tok);
+
+        // Validate values
+        if (pid < 0 || arrival < 0 || cpu_time <= 0)
+        {
+            fprintf(stderr, "Error: Invalid Process Values\n");
+            free(*jobs);
+            fclose(fp);
+            return 1;
+        }
+        
+        // Expand array of job_t's to hold new job_t instance
+        job_t *new_arr = realloc(*jobs, (*n + 1) * sizeof(job_t)); // resize array to hold one extra job_t instance at a time
+        if (new_arr == NULL) // new_arr should point to first element of resized array, if NULL realloc failed
+        {
+            fprintf(stderr, "Error: Memory allocation failed\n");
+            free(*jobs);
+            fclose(fp);
+            return 1;
+        }
+        *jobs = new_arr; // update *jobs to point to newly resized array, incase realloc moved it to a new location
+
+        // Fill in job struct with values
+        (*jobs)[*n].pid = pid;
+        (*jobs)[*n].arrival = arrival;
+        (*jobs)[*n].cpu_time = cpu_time;
+        (*n)++; // increment job count
+
+        // Sort jobs by arrival time, then PID
+
+    }
+    fclose(fp);
+    return 0;
 }
 
 /* TODO: discrete-time CPU simulation with FIFO ready queue.
