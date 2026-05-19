@@ -51,7 +51,7 @@ int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path)
         value = strchr(argv[i], '='); // find '=' in arg and point to value after it
         if (value != NULL) // if '=' is found
         {
-            value++; // move pointer to FCFS/RR or path
+            value++; // move pointer to FCFS/RR, path, or quantum
         }
         else // input not valid => ./sched --policyFCFS --inW1.txt
         {
@@ -71,7 +71,7 @@ int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path)
         // Read Path
         else if (strncmp(argv[i], "--in=", 5) == 0)
         {
-            *in_path = value; // value now should point to path
+            *in_path = value; // value should point to path
             path = true;
         }
 
