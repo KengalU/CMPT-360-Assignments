@@ -8,6 +8,8 @@
  *               both a timeline of execution and detailed scheduling metrics
  * Reference(s): strncmp() - https://www.w3schools.com/c/ref_string_strncmp.php
  *               strtok() - https://www.w3schools.com/c/ref_string_strtok.php
+ *               Scheduling Queue - https://www.digitalocean.com/community/tutorials/queue-in-c
+ *                                - https://www.geeksforgeeks.org/c/queue-in-c/
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -199,8 +201,6 @@ int load_workload(const char* path, job_t** jobs, int* n)
     return 0;
 }
 
-
-
 /* TODO: discrete-time CPU simulation with FIFO ready queue.
    FCFS: never preempt. RR: quantum countdown; when it hits 0 and job not finished, enqueue at tail.
    Track: first run (first time scheduled) and completion (t+1 on finish).
@@ -213,10 +213,70 @@ int load_workload(const char* path, job_t** jobs, int* n)
      Pk: first run=... completion=... TAT=... RESP=...
      System: ctx_switches=..., avgTAT=..., avgRESP=...
 */
-int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out){
-    (void)jobs; (void)n; (void)cfg; (void)out;
-    fprintf(stderr, "TODO: simulate() not implemented\n");
-    return 1;
+int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out)
+/*
+    Purpose: Simulate execution of jobs on a single CPU with given scheduling policy and quantum (if RR)
+    Params: jobs - array of job_t's to schedule
+            n - number of jobs
+            cfg - sim_cfg_t struct with scheduling policy and quantum (if RR)
+            out - sim_metrics_t struct to fill in with results
+    Return: 0 on success, 1 on error
+*/
+{
+    // Initialize arrays to track job states
+    int *time_remaining = malloc(n * sizeof(int)); // array to track remaining CPU time for each job
+    bool *in_queue = malloc(n * sizeof(bool)); // array to track if job is in ready queue
+    int *queue = malloc(n * sizeof(int)); // array to implement ready queue (store indices of jobs)
+
+    // Initialize Queue variables
+    int head = 0, tail = 0, curr = -1, t = 0, jobs_completed = 0;
+
+    /* Initialize arrays for: 
+                            Turnaround Time = completion[i] - jobs[i].arrival
+                            Response Time = first_run[i] - jobs[i].arrival
+    */ 
+    int *first_run = malloc(n * sizeof(int)); // array to track first run time for each job
+    int *completion = malloc(n * sizeof(int)); // array to track completion
+
+    // Verify memory allocation for all arrays
+    if (!time_remaining || !in_queue || !queue || !first_run || !completion)
+    {
+        fprintf(stderr, "Memory Error: Allocation Failed.");
+        return 1;
+    }
+
+    // Assign elements in arrays
+    for (int i = 0; i < n; i++)
+    {
+        time_remaining[i] = jobs[i].cpu_time;
+        in_queue[i] = false;
+        completion[i] = -1; // placeholder int
+        first_run[i] = -1; // placeholder int
+    }
+
+    // Main simulation loop
+    while (jobs_completed < n)
+    {
+        // Queue jobs that arrive at t
+        for (int i = 0; i < n; i++) // check all jobs to see if they arrive at current time t
+        {
+            if (jobs[i].arrival == t && !in_queue[i])
+            {
+                queue[tail] = i; // queue job at end of queue
+                in_queue[i] = true;
+                tail++;
+            }
+        }
+        
+        // Schedule job at head of queue
+        if (curr == -1 && head < tail) 
+        {
+            curr = queue[head]; // schedule job at head of queue
+            head++;
+            if (first_run[curr] == -1) first_run[curr] = t; // record first run
+        }
+    }
+
 }
 
 int main(int argc, char** argv){
