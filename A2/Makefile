@@ -3,7 +3,7 @@
  #* Student ID:   3103649 / 3144661
  #* Date:         May 18, 2026
  #* File:         Makefile
- #* Description:  Makefile for A2 - User Input Validation
+ #* Description:  Makefile for A2 - CPU Scheduling Simulator
  #*/
 
 # Variables
