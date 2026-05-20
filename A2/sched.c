@@ -51,7 +51,7 @@ int parse_args(int argc, char** argv, sim_cfg_t* cfg, const char** in_path)
     for (int i = 1; i < argc; i++) // start at 1 to skip program name
     {
         value = strchr(argv[i], '='); // find '=' in arg and point to value after it
-        if (value != NULL) // if '=' is found
+        if (value != NULL) // if '=' is found, value points to =
         {
             value++; // move pointer to FCFS/RR, path, or quantum
         }
