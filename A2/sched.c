@@ -10,6 +10,7 @@
  *               strtok() - https://www.w3schools.com/c/ref_string_strtok.php
  *               Scheduling Queue - https://www.digitalocean.com/community/tutorials/queue-in-c
  *                                - https://www.geeksforgeeks.org/c/queue-in-c/
+ *              qsort() - CMPT 201 Notes
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -211,15 +212,22 @@ int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out)
     Return: 0 on success, 1 on error
 */
 {
-    (void) cfg; // placeholder to avoid unused parameter warning, remove when cfg is used for RR scheduling
-
     // Initialize arrays to track job states
     int *time_remaining = malloc(n * sizeof(int)); // array to track remaining CPU time for each job
     bool *in_queue = malloc(n * sizeof(bool)); // array to track if job is in ready queue
-    int *queue = malloc(n * sizeof(int)); // array to implement ready queue (store indices of jobs)
+    int total_time = 0; 
+    for (int i = 0; i < n; i++)
+    {
+        total_time += jobs[i].cpu_time; // calculate total cpu time to create a large enough queue for rr
+    }
+    int *queue = malloc(total_time * sizeof(int)); // array to implement ready queue (store indices of jobs)
 
     // Initialize Queue variables
-    int head = 0, tail = 0, curr = -1, t = 0, jobs_completed = 0;
+    int head = 0, tail = 0, curr = -1,
+    
+    // Initialize simulation variables
+    t = 0, jobs_completed = 0;
+    int quantum_remaining = 0;
 
     /* Initialize arrays for: 
                             Turnaround Time = completion[i] - jobs[i].arrival
@@ -240,7 +248,7 @@ int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out)
     for (int i = 0; i < n; i++)
     {
         time_remaining[i] = jobs[i].cpu_time;
-        in_queue[i] = false;
+        in_queue[i] = false; // no jobs in queue at start of simulation
         completion[i] = -1; // placeholder int
         first_run[i] = -1; // placeholder int
     }
@@ -261,7 +269,7 @@ int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out)
         // Queue jobs that arrive at t
         for (int i = 0; i < n; i++) // check all jobs to see if they arrive at current time t
         {
-            if (jobs[i].arrival == t && !in_queue[i])
+            if (jobs[i].arrival <= t && !in_queue[i])
             {
                 queue[tail] = i; // queue job at end of queue
                 in_queue[i] = true;
@@ -275,6 +283,7 @@ int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out)
             curr = queue[head]; // schedule job at head of queue
             head++;
             if (first_run[curr] == -1) first_run[curr] = t; // record first run
+            quantum_remaining = cfg->quantum; // reset quantum for new job (even if policy is FCFS, quantum_remaining will not be used)
         }
 
         // Update Timeline if needed 
@@ -299,11 +308,22 @@ int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out)
         if (curr != -1) // if a job is scheduled
         {
             time_remaining[curr]--; // decrement a unit of CPU time from the current job
+            quantum_remaining--; // decrement the remaining quantum for the current job
+
             if (time_remaining[curr] == 0) // if the job is completed
             {
                 completion[curr] = t + 1; // one past the last tick the process ran
                 curr = -1; // re-idle CPU
                 jobs_completed++;
+            }
+            else if (cfg->policy == POL_RR && quantum_remaining == 0) // if RR policy and quantum is expired but job is not completed, preempt and move job to back of queue
+            {
+                // Re-queue current job
+                in_queue[curr] = false; // mark job as not in queue so it can be re-queued
+                queue[tail] = curr;
+                in_queue[curr] = true; // now job will be accepted back into queue
+                tail++;
+                curr = -1; // re-idle CPU
             }
         }
         t++;
