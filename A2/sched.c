@@ -202,6 +202,7 @@ int load_workload(const char* path, job_t** jobs, int* n)
     return 0;
 }
 
+
 int simulate(const job_t* jobs, int n, const sim_cfg_t* cfg, sim_metrics_t* out)
 /*
     Purpose: Simulate execution of jobs on a single CPU with given scheduling policy and quantum (if RR)
