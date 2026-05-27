@@ -31,7 +31,9 @@ compare and contrast results.
     - Average Response Time
     - Context Switches
     - 
-- Validate again
+- Displays run time stats while running
+- Statistics are displayed after calculation
+
 # 6. Status
 Make file works correctly
 Command Line parsing works properly
@@ -40,3 +42,6 @@ Simulation loop correctly runs
 Output to console matches required output
 Statistics match properly
 # 6. Notes / Assumptions (Optional)
+Decided that simulation should include both RR logic and FIFO logic as it would get
+too complicated to separate them both due to the arrays of structs used.
+Passing too many things as a return value and as parameters might get messy and confusing
