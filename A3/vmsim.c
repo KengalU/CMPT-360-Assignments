@@ -22,11 +22,52 @@ static void usage(const char *prog) {
 }
 
 // CLI
-bool parse_args(int argc, char **argv, sim_opts_t *o) {
-    (void)argc; (void)argv;
+bool parse_args(int argc, char **argv, sim_opts_t *o) 
+{
     if (o) memset(o, 0, sizeof(*o));
-    fprintf(stderr, "TODO: parse_args()\n");
-    return false;
+    bool mode_set = false, base_set = false, limit_set = false, trace_set = false, config_set = false;
+    char *value;
+
+    for (int i = 1; i < argc; i++)
+    {
+        value = strchr(argv[i], '='); // find '=' in arg and point to value after it
+        if (value != NULL) value++; // move pointer to value after '='
+        else {fprintf(stderr, "Error: Malformed arguments: '%s'\n", argv[i]); return false;} // input not valid => ./vmsim --modebb --base1000
+
+        if (strncmp(argv[i], "--mode=", 7) == 0)
+        {
+            if (strcmp(value, "bb") == 0) o->mode = MODE_BB;
+            else if (strcmp(value, "seg") == 0) o->mode = MODE_SEG;
+            else {fprintf(stderr, "Error: Invalid mode: '%s'\n", value); return false;}
+            mode_set = true;
+        }
+
+        else if (strncmp(argv[i], "--base=", 7) == 0) {o->base = atol(value); base_set = true;}
+
+        else if (strncmp(argv[i], "--limit=", 8) == 0) {o->limit = atol(value); limit_set = true;}
+
+        else if (strncmp(argv[i], "--trace=", 8) == 0) {o->trace_path = value; trace_set = true;}
+
+        else if (strncmp(argv[i], "--config=", 9) == 0) {o->config_path = value; config_set = true;}
+
+        else{fprintf(stderr, "Error: Invalid argument: '%s'\n", argv[i]); return false;}
+    }
+
+    // Validate arg combos
+    if (!mode_set) {fprintf(stderr, "Error: --mode is required\n"); return false;}
+    if (!trace_set) {fprintf(stderr, "Error: --trace is required\n"); return false;}
+    if (o->mode == MODE_BB && (!base_set || !limit_set))
+    {
+        fprintf(stderr, "Error: --base and --limit are required for bb mode\n");
+        return false;
+    }
+    if (o->mode == MODE_SEG && !config_set)
+    {
+        fprintf(stderr, "Error: --config is required for seg mode\n");
+        return false;
+    }
+    
+    return true;
 }
 
 //bb
