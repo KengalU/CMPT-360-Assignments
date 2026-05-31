@@ -39,6 +39,8 @@ typedef struct {
 // CLI
 bool parse_args(int argc, char **argv, sim_opts_t *o);
 
+// Testing Function
+int echo_file(const sim_opts_t *o); // helper function to print contents of trace file (and config file for seg mode) for testing
 
 // Run modes
 int run_bb(const sim_opts_t *o, stats_t *st);
