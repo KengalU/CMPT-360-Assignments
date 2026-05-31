@@ -1,8 +1,8 @@
-/* ID Header:
- Student Name:
- Student ID:
- Submission Date:
- File:
+/* ID Header: 
+ Student Name: Scott Weaver Kevin Usualele
+ Student ID: 3144661 / 3103649
+ Submission Date: TBD
+ File: vsim.c
 */
 
 #include "vmsim.h"
@@ -73,14 +73,27 @@ bool parse_args(int argc, char **argv, sim_opts_t *o)
 //bb
 int run_bb(const sim_opts_t *o, stats_t *st) {
     (void)o; (void)st;
-    fprintf(stderr, "TODO: run_bb()\n");
+    echo_file(o);
+    //fprintf(stderr, "TODO: run_bb()\n");
     return 0;
 }
 
 //seg
 int run_seg(const sim_opts_t *o, stats_t *st) {
     (void)o; (void)st;
-    fprintf(stderr, "TODO: run_seg()\n");
+    echo_file(o);
+    //fprintf(stderr, "TODO: run_seg()\n");
+    return 0;
+}
+
+int echo_file(const sim_opts_t *o) {
+    FILE *f = fopen(o->trace_path, "r");
+    if (!f) { fprintf(stderr, "Error: Failed to open file '%s'\n", o->trace_path); return 1; }
+    char line[256];
+    while (fgets(line, sizeof(line), f)) {
+        printf("%s", line);
+    }
+    fclose(f);
     return 0;
 }
 
