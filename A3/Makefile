@@ -3,7 +3,7 @@
  #* Student ID:   3103649 / 3144661
  #* Date:         May 18, 2026
  #* File:         Makefile
- #* Description:  Makefile for A2 - CPU vsimuling Simulator
+ #* Description:  Makefile for A2 - CPU vmsimuling Simulator
  #*/
 
 # Variables
@@ -17,25 +17,25 @@ VGFLAGS ?= --leak-check=full --show-leak-kinds=all --track-origins=yes --errors-
 
 .PHONY: all clean checkbb checkseg valgrind vg
 
-all: vsim 
+all: vmsim 
 
-vsim: vsim.o
+vmsim: vmsim.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-vsim.o: vsim.c vsim.h
+vmsim.o: vmsim.c vmsim.h
 	$(CC) $(CFLAGS) -c $<
 
-checkbb: vsim
-	./vsim --mode=bb  --base=1000 --limit=2000 --trace=t1.txt
+checkbb: vmsim
+	./vmsim --mode=bb  --base=1000 --limit=2000 --trace=t1.txt
 
-checkseg: vsim
-	./vsim --mode=seg --config=three-seg.ini --trace=t2.txt
+checkseg: vmsim
+	./vmsim --mode=seg --config=three-seg.ini --trace=t2.txt
 
-valgrind: vsim
-	$(VALGRIND) $(VGFLAGS) ./vsim --mode=bb  --base=1000 --limit=2000 --trace=t1.txt
-	$(VALGRIND) $(VGFLAGS) ./vsim --mode=seg --config=three-seg.ini --trace=t2.txt
+valgrind: vmsim
+	$(VALGRIND) $(VGFLAGS) ./vmsim --mode=bb  --base=1000 --limit=2000 --trace=t1.txt
+	$(VALGRIND) $(VGFLAGS) ./vmsim --mode=seg --config=three-seg.ini --trace=t2.txt
 
 vg: valgrind
 
 clean:
-	rm -f vsim vsim.o
+	rm -f vmsim vmsim.o
