@@ -85,7 +85,8 @@ int run_seg(const sim_opts_t *o, stats_t *st) {
 }
 
 //main()
-int main(int argc, char **argv) {
+int main(int argc, char **argv) 
+{
     sim_opts_t opts;
     if (!parse_args(argc, argv, &opts)) { usage(argv[0]); return 1; }
     stats_t st = (stats_t){0};
