@@ -1,8 +1,8 @@
 /* ID Header: 
- Student Name: Scott Weaver Kevin Usualele
+ Student Name: Scott Weaver / Kevin Usualele
  Student ID: 3144661 / 3103649
  Submission Date: TBD
- File: vsim.c
+ File: vmsim.c
 */
 
 #include "vmsim.h"
@@ -103,8 +103,78 @@ int echo_file(const sim_opts_t *o)
 
 //bb
 int run_bb(const sim_opts_t *o, stats_t *st) {
-    (void)st;
-    echo_file(o);
+    FILE *fp = fopen(o->trace_path, "r");
+    if (!fp) { fprintf(stderr, "Error: Failed to open file '%s'\n", o->trace_path); return 1; }
+    char line[256];
+    char *line_ptr;
+    int line_num = 0;
+
+    while (fgets(line, sizeof(line), fp))
+    {
+        line_num++;
+
+        if (line[0] == '#' || line[0] == '\n') continue; // skip headers and blank lines in file
+        for (char *c = line; *c != '\0'; c++) // strip inline comments
+        {
+            if (*c == '#') {*c = '\0'; break;}
+        }
+
+        line_ptr = line;
+        while (isspace(*line_ptr)) line_ptr++; // skip leading whitespace
+        if (*line_ptr == '\0') continue; // skip lines that are blank after stripping comments
+
+
+        char op;
+        char addr[256];
+
+        // Scan line for exactly op and addr
+        if (sscanf(line_ptr, "%c %s", &op, addr) != 2)
+        {
+            fprintf(stderr, "trace: %s:%d: malformed: expected \"OP ADDR\"\n", o->trace_path, line_num);
+            continue; // skip malformed lines
+        }
+
+        // Validate op
+        if (op != 'R' && op != 'W')
+        {
+            fprintf(stderr, "trace: %s:%d: malformed: op must be R/W, got \"%c\"\n", o->trace_path, line_num, op);
+            continue; // skip lines with invalid ops
+        }
+
+        // Validate address
+        char *endptr; // pointer for strtol to indicate where parsing stopped
+        long VA = strtol(addr, &endptr, 10); // convert address string to long int base 10
+        if (endptr == addr || *endptr != '\0') // strtol didnt move at all => "G16\0" || strtol stopped parsing before '\0' => "16G\0"
+        {
+            fprintf(stderr, "trace: %s:%d: bad address \"%s\" (not decimal)\n", o->trace_path, line_num, addr);
+            continue; // skip lines with invalid addresses
+        }
+
+        /*
+            valid OP ADDR line => accesses++
+                && in bounds => ok++
+                && out of bounds => faults_bounds++
+        */
+        st->accesses++; // count valid accesses
+        if (VA >= 0 && VA < o->limit)
+        {
+            long PA = o->base + VA; // PA = base + VA
+            printf("%c %-4ld -> PA %ld ; ok\n", op, VA, PA);
+            st->ok++;
+        }
+        else
+        {
+            printf("%c %-4ld -> fault: BOUNDS\n", op, VA);
+            st->faults_bounds++;
+        }
+    }
+    fclose(fp);
+
+    // Print stats summary
+    printf("== stats ==\n");
+    printf("accesses=%lu, ok=%lu, faults.bounds=%lu\n", st->accesses, st->ok, st->faults_bounds);
+
+    
     return 0;
 }
 
