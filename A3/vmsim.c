@@ -13,7 +13,8 @@
 #include <errno.h>
 
 // usage
-static void usage(const char *prog) {
+static void usage(const char *prog) 
+{
     fprintf(stderr,
         "Usage:\n"
         "  %s --mode=bb  --base=N --limit=N --trace=FILE \n"
@@ -23,6 +24,12 @@ static void usage(const char *prog) {
 
 // CLI
 bool parse_args(int argc, char **argv, sim_opts_t *o) 
+/*
+    Purpose: Parse command line args and fill in sim_opts_t struct with values
+    Params: argc: number of command line args, argv: array of command line arg strings
+            o: pointer to sim_opts_t struct to fill in with values from args
+    Return: true on success, false on error (invalid args or combos)
+*/
 {
     if (o) memset(o, 0, sizeof(*o));
     bool mode_set = false, base_set = false, limit_set = false, trace_set = false, config_set = false;
@@ -50,7 +57,7 @@ bool parse_args(int argc, char **argv, sim_opts_t *o)
 
         else if (strncmp(argv[i], "--config=", 9) == 0) {o->config_path = value; config_set = true;}
 
-        else{fprintf(stderr, "Error: Invalid argument: '%s'\n", argv[i]); return false;}
+        else {fprintf(stderr, "Error: Invalid argument: '%s'\n", argv[i]); return false;}
     }
 
     // Validate arg combos
@@ -70,30 +77,44 @@ bool parse_args(int argc, char **argv, sim_opts_t *o)
     return true;
 }
 
+int echo_file(const sim_opts_t *o) 
+/*
+    Purpose: Helper function to print contents of trace file (and config file for seg mode) for testing
+    Params: o - pointer to sim_opts_t struct with trace_path (and config_path for seg mode)
+    Return: 0 on success, 1 on error
+
+*/
+{
+    FILE *fp = fopen(o->trace_path, "r");
+    if (!fp) { fprintf(stderr, "Error: Failed to open file '%s'\n", o->trace_path); return 1; }
+    char line[256];
+    while (fgets(line, sizeof(line), fp)) 
+    {
+        if (line[0] == '#' || line[0] == '\n') continue; // skip headers and blank lines in file
+        for (char *c = line; *c != '\0'; c++) // strip inline comments
+        {
+            if (*c == '#') {*c = '\0'; break;}
+        }
+        printf("%s", line);
+    }
+    fclose(fp);
+    return 0;
+}
+
 //bb
 int run_bb(const sim_opts_t *o, stats_t *st) {
-    (void)o; (void)st;
+    (void)st;
     echo_file(o);
-    //fprintf(stderr, "TODO: run_bb()\n");
     return 0;
 }
 
 //seg
 int run_seg(const sim_opts_t *o, stats_t *st) {
-    (void)o; (void)st;
+    (void)st;
+    FILE *cfg_fp = fopen(o->config_path, "r");
+    if (!cfg_fp) { fprintf(stderr, "Error: Failed to open file '%s'\n", o->config_path); return 1; }
+    fclose(cfg_fp);
     echo_file(o);
-    //fprintf(stderr, "TODO: run_seg()\n");
-    return 0;
-}
-
-int echo_file(const sim_opts_t *o) {
-    FILE *f = fopen(o->trace_path, "r");
-    if (!f) { fprintf(stderr, "Error: Failed to open file '%s'\n", o->trace_path); return 1; }
-    char line[256];
-    while (fgets(line, sizeof(line), f)) {
-        printf("%s", line);
-    }
-    fclose(f);
     return 0;
 }
 
