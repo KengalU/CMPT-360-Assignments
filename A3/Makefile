@@ -26,13 +26,13 @@ vmsim.o: vmsim.c vmsim.h
 	$(CC) $(CFLAGS) -c $<
 
 checkbb: vmsim
-	./vmsim --mode=bb  --base=1000 --limit=2000 --trace=t1.txt
+	./vmsim --mode=bb  --base=4096 --limit=64 --trace=t1.txt
 
 checkseg: vmsim
 	./vmsim --mode=seg --config=three-seg.ini --trace=t2.txt
 
 valgrind: vmsim
-	$(VALGRIND) $(VGFLAGS) ./vmsim --mode=bb  --base=1000 --limit=2000 --trace=t1.txt
+	$(VALGRIND) $(VGFLAGS) ./vmsim --mode=bb  --base=4096 --limit=64 --trace=t1.txt
 	$(VALGRIND) $(VGFLAGS) ./vmsim --mode=seg --config=three-seg.ini --trace=t2.txt
 
 vg: valgrind
