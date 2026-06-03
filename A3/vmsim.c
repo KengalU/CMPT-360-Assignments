@@ -63,6 +63,7 @@ bool parse_args(int argc, char **argv, sim_opts_t *o)
     // Validate arg combos
     if (!mode_set) {fprintf(stderr, "Error: --mode is required\n"); return false;}
     if (!trace_set) {fprintf(stderr, "Error: --trace is required\n"); return false;}
+    if (o->base < 0 || o->limit < 0) {return false;}
     if (o->mode == MODE_BB && (!base_set || !limit_set))
     {
         fprintf(stderr, "Error: --base and --limit are required for bb mode\n");
