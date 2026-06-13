@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dual Queue (DQ) Scheduling Algorithm Simulator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 24px; min-height: 100vh; }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 4px; color: #fff; }
+  .subtitle { font-size: 12px; color: #666; margin-bottom: 16px; }
+  button { background: transparent; border: 1px solid #555; color: #e0e0e0; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: background 0.15s; }
+  button:hover { background: #333; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button:disabled:hover { background: transparent; }
+  select { padding: 5px 8px; border: 1px solid #555; border-radius: 8px; background: #2a2a2a; color: #e0e0e0; font-size: 13px; }
+  input[type=range] { accent-color: #6b8cff; }
+  input[type=number] { background: #2a2a2a; border: 1px solid #555; border-radius: 6px; color: #e0e0e0; font-size: 13px; padding: 3px 6px; width: 52px; text-align: center; }
+  input[type=number]:focus { outline: none; border-color: #6b8cff; }
+
+  .process-editor { border: 1px solid #444; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; background: #222; }
+  .process-editor h3 { font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 10px; }
+  .proc-rows { display: flex; flex-direction: column; gap: 8px; }
+  .proc-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .proc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .proc-label { width: 28px; font-size: 13px; font-weight: 500; }
+  .proc-row input[type=range] { flex: 1; min-width: 80px; }
+  .proc-burst-val { width: 28px; font-size: 13px; font-weight: 500; text-align: right; }
+  .proc-remove { background: none; border: none; cursor: pointer; color: #666; font-size: 18px; padding: 0 2px; line-height: 1; }
+  .proc-remove:hover { color: #e05555; }
+  .add-proc-btn { margin-top: 8px; font-size: 12px; padding: 4px 10px; }
+  .arrival-lbl { font-size: 11px; color: #666; flex-shrink: 0; }
+
+  .top-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-group label { font-size: 12px; color: #aaa; }
+  .ctrl-group span { font-size: 13px; font-weight: 500; }
+  .ctrl-group input[type=range] { width: 110px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .vars-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .var-card { background: #2a2a2a; border-radius: 8px; padding: 8px 14px; min-width: 90px; }
+  .var-card .lbl { font-size: 11px; color: #888; }
+  .var-card .val { font-size: 22px; font-weight: 500; }
+  .var-card.red .val { color: #e07050; }
+  .var-card.blue .val { color: #6b9fe0; }
+  .var-card.def .val { color: #e0e0e0; }
+
+  .status-bar { font-size: 13px; padding: 7px 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #aaa; margin-bottom: 12px; }
+
+  .queue-section { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .queue-box { border: 1px solid #444; border-radius: 12px; padding: 10px 12px; background: #222; }
+  .queue-box h3 { font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 8px; }
+  .process-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 12px; margin: 2px; font-weight: 500; border: 1px solid; }
+  .pill-running { background: #1a3a1a; color: #6fcf6f; border-color: #4CAF50; }
+  .pill-waiting { background: #2a2a2a; color: #e0e0e0; border-color: #555; }
+  .pill-large   { background: #3a2a00; color: #ffb74d; border-color: #FF9800; }
+  .pill-done    { background: #222; color: #666; border-color: #444; text-decoration: line-through; opacity: 0.5; }
+  .pill-wq      { background: #1a2a3a; color: #90caf9; border-color: #3a6a9a; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .gantt-label-row { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .gantt { border: 1px solid #444; border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
+  .gantt-row { display: flex; align-items: center; min-height: 28px; border-bottom: 1px solid #333; }
+  .gantt-row:last-child { border-bottom: none; }
+  .gantt-lbl { width: 32px; font-size: 11px; color: #888; padding: 0 4px; flex-shrink: 0; text-align: center; }
+  .gantt-block { height: 28px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; }
+
+  .log-box { border: 1px solid #444; border-radius: 8px; padding: 8px 10px; background: #1e1e1e; max-height: 140px; overflow-y: auto; font-size: 12px; color: #aaa; line-height: 1.7; margin-bottom: 12px; }
+  .log-reset { color: #e07050; font-weight: 500; }
+  .log-done   { color: #6fcf6f; }
+  .log-large  { color: #ffb74d; font-weight: 500; }
+  .log-move   { color: #90caf9; }
+
+  .section-title { font-size: 12px; color: #888; margin-bottom: 5px; }
+
+  .metrics-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+  .metrics-table th { text-align: left; padding: 5px 8px; color: #888; font-weight: 500; border-bottom: 1px solid #444; }
+  .metrics-table td { padding: 5px 8px; border-bottom: 1px solid #333; }
+  .metrics-table tr:last-child td { border-bottom: none; }
+  .metrics-section { border: 1px solid #444; border-radius: 12px; padding: 12px 14px; background: #222; margin-bottom: 14px; display: none; }
+  .metrics-section h3 { font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 10px; }
+  .avg-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .avg-card { background: #2a2a2a; border-radius: 8px; padding: 8px 14px; }
+  .avg-card .lbl { font-size: 11px; color: #888; }
+  .avg-card .val { font-size: 18px; font-weight: 500; color: #e0e0e0; }
+</style>
+</head>
+<body>
+
+<h1>Dual Queue (DQ) Scheduling Algorithm Simulator</h1>
+<p class="subtitle">Shah, Mahmood &amp; Oxley — extended from Hybrid (H) with a separate waiting queue (FIFO) and execution queue (SJF)</p>
+
+<div class="process-editor">
+  <h3>Processes — drag to set burst length, set arrival time</h3>
+  <div class="proc-rows" id="proc-rows"></div>
+  <button class="add-proc-btn" onclick="addProcess()">+ Add process</button>
+</div>
+
+<div class="top-row">
+  <div class="ctrl-group">
+    <label>Time quantum (Q)</label>
+    <input type="range" min="1" max="10" value="4" id="quantum-slider" oninput="document.getElementById('q-val').textContent=this.value">
+    <span id="q-val">4</span>
+  </div>
+  <div class="btn-row">
+    <button onclick="startSim()">Apply &amp; Reset ↺</button>
+    <button onclick="stepSim()" id="btn-step">Step →</button>
+    <button onclick="autoRun()" id="btn-auto">Auto-run ▶</button>
+  </div>
+</div>
+
+<div class="vars-row">
+  <div class="var-card red"><div class="lbl">t_exec</div><div class="val" id="texec-val">0</div></div>
+  <div class="var-card blue"><div class="lbl">t_large</div><div class="val" id="tlarge-val">0</div></div>
+  <div class="var-card def"><div class="lbl">Time</div><div class="val" id="time-val">0</div></div>
+  <div class="var-card def"><div class="lbl">Step</div><div class="val" id="step-val">0</div></div>
+</div>
+
+<div class="status-bar" id="status-bar">Set burst lengths and arrival times above, then press Apply &amp; Reset.</div>
+
+<div class="queue-section">
+  <div class="queue-box">
+    <h3>Waiting queue (FIFO — new arrivals)</h3>
+    <div id="wq-display" style="min-height:28px;display:flex;flex-wrap:wrap;align-items:center;"></div>
+  </div>
+  <div class="queue-box">
+    <h3>Execution queue (SJF order)</h3>
+    <div id="eq-display" style="min-height:28px;display:flex;flex-wrap:wrap;align-items:center;"></div>
+  </div>
+</div>
+
+<div class="queue-section" style="margin-top:-4px">
+  <div class="queue-box">
+    <h3>Running</h3>
+    <div id="running-display" style="min-height:28px;display:flex;flex-wrap:wrap;align-items:center;"></div>
+  </div>
+  <div class="queue-box">
+    <h3>Completed</h3>
+    <div id="completed-display" style="min-height:28px;display:flex;flex-wrap:wrap;align-items:center;"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4CAF50"></div> Running</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#90CAF9"></div> In execution queue</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#64B5F6"></div> In waiting queue</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#FFB74D"></div> Starvation-guard turn (Gantt)</div>
+</div>
+
+<div class="section-title">Gantt chart</div>
+<div class="gantt" id="gantt-chart"></div>
+
+<div class="log-box" id="log-box">Log will appear here...</div>
+
+<div class="metrics-section" id="metrics-section">
+  <h3>Performance metrics</h3>
+  <table class="metrics-table">
+    <thead><tr><th>Process</th><th>Burst</th><th>Arrival</th><th>Finish</th><th>Turnaround</th><th>Waiting</th><th>Response</th></tr></thead>
+    <tbody id="metrics-body"></tbody>
+  </table>
+  <div class="avg-row">
+    <div class="avg-card"><div class="lbl">Avg waiting time</div><div class="val" id="avg-wait">—</div></div>
+    <div class="avg-card"><div class="lbl">Avg turnaround time</div><div class="val" id="avg-tat">—</div></div>
+    <div class="avg-card"><div class="lbl">Avg response time</div><div class="val" id="avg-resp">—</div></div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#90CAF9','#A5D6A7','#FFCC80','#CE93D8','#80DEEA','#F48FB1','#BCAAA4','#FFE082'];
+
+let procDefs = [
+  {id:'P1', burst:10, arrival:0, color:COLORS[0]},
+  {id:'P2', burst:4,  arrival:1, color:COLORS[1]},
+  {id:'P3', burst:6,  arrival:2, color:COLORS[2]},
+  {id:'P4', burst:2,  arrival:3, color:COLORS[3]},
+  {id:'P5', burst:8,  arrival:4, color:COLORS[4]},
+];
+let nextProcNum = 6;
+
+let waitingQ = [], execQ = [], completed = [];
+let currentProc = null;
+let tExec = 0, tLarge = 0, currentTime = 0, stepCount = 0;
+let ganttData = {}, autoTimer = null, logLines = [], simReady = false;
+let firstRunTime = {};
+
+function getQ() { return parseInt(document.getElementById('quantum-slider').value); }
+
+function calcTLarge() {
+  const all = [...waitingQ, ...execQ];
+  return all.length > 0 ? Math.max(...all.map(p => p.rem)) : 0;
+}
+
+function renderEditor() {
+  const rows = document.getElementById('proc-rows');
+  rows.innerHTML = '';
+  procDefs.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'proc-row';
+    row.innerHTML = `
+      <div class="proc-dot" style="background:${p.color}"></div>
+      <div class="proc-label">${p.id}</div>
+      <input type="range" min="1" max="20" value="${p.burst}"
+        oninput="procDefs[${i}].burst=parseInt(this.value);document.getElementById('bv${i}').textContent=this.value"
+        style="flex:1;min-width:80px">
+      <div class="proc-burst-val" id="bv${i}">${p.burst}</div>
+      <span class="arrival-lbl">arrives@</span>
+      <input type="number" min="0" max="50" value="${p.arrival}"
+        oninput="procDefs[${i}].arrival=Math.max(0,parseInt(this.value)||0)">
+      <button class="proc-remove" onclick="removeProcess(${i})" title="Remove">×</button>
+    `;
+    rows.appendChild(row);
+  });
+}
+
+function addProcess() {
+  if (procDefs.length >= 8) return;
+  procDefs.push({id:'P'+nextProcNum, burst:5, arrival:0, color:COLORS[procDefs.length % COLORS.length]});
+  nextProcNum++;
+  renderEditor();
+}
+
+function removeProcess(i) {
+  if (procDefs.length <= 1) return;
+  procDefs.splice(i, 1);
+  renderEditor();
+}
+
+function startSim() {
+  clearInterval(autoTimer); autoTimer = null;
+  document.getElementById('btn-auto').textContent = 'Auto-run ▶';
+
+  waitingQ = []; execQ = []; completed = [];
+  currentProc = null; tExec = 0; currentTime = 0; stepCount = 0;
+  logLines = []; ganttData = {}; firstRunTime = {};
+
+  const pool = procDefs.map(p => ({...p, rem: p.burst, wasLarge: false, arrived: false}));
+  pool.sort((a,b) => a.arrival - b.arrival);
+
+  pool.forEach(p => { ganttData[p.id] = []; });
+
+  window._pool = pool;
+
+  arriveProcesses(0, pool);
+  if (execQ.length === 0 && waitingQ.length > 0) {
+    moveWQtoEQ('init');
+  }
+  tLarge = calcTLarge();
+
+  simReady = true;
+  document.getElementById('gantt-chart').innerHTML = '';
+  document.getElementById('metrics-section').style.display = 'none';
+  addLog('Simulation ready. Quantum=' + getQ() + '. Press Step or Auto-run.');
+  updateDisplay('Simulation ready. Press Step or Auto-run.');
+}
+
+function arriveProcesses(t, pool) {
+  pool = pool || window._pool;
+  pool.forEach(p => {
+    if (!p.arrived && p.arrival <= t) {
+      p.arrived = true;
+      waitingQ.push(p);
+      addLog(`<span class="log-move">${p.id} arrived at t=${t} → waiting queue (FIFO).</span>`);
+    }
+  });
+}
+
+function moveWQtoEQ(reason) {
+  if (waitingQ.length === 0) return;
+  execQ.push(...waitingQ);
+  const names = waitingQ.map(p=>p.id).join(', ');
+  waitingQ = [];
+  execQ.sort((a,b) => a.rem - b.rem);
+  addLog(`<span class="log-move">WQ→EQ: [${names}] moved to execution queue, sorted by SJF${reason ? ' ('+reason+')' : ''}.</span>`);
+}
+
+function stepSim() {
+  if (!simReady) { startSim(); return; }
+
+  const pool = window._pool;
+  const Q = getQ();
+  stepCount++;
+
+  if (execQ.length === 0 && waitingQ.length === 0 && !currentProc) {
+    const pending = pool.filter(p => !p.arrived);
+    if (pending.length === 0) {
+      updateDisplay('All processes completed! Press Apply & Reset to run again.');
+      showMetrics();
+      return;
+    }
+    const nextArrival = Math.min(...pending.map(p => p.arrival));
+    ganttData['__idle'] = ganttData['__idle'] || [];
+    ganttData['__idle'].push({start: currentTime, end: nextArrival, wasLarge: false});
+    currentTime = nextArrival;
+    arriveProcesses(currentTime, pool);
+    if (execQ.length === 0 && waitingQ.length > 0) moveWQtoEQ('exec queue empty');
+    tLarge = calcTLarge();
+    updateDisplay(buildStatus());
+    return;
+  }
+
+  if (!currentProc) {
+    if (execQ.length === 0 && waitingQ.length > 0) moveWQtoEQ('exec queue empty');
+    if (execQ.length === 0) { updateDisplay(buildStatus()); return; }
+    currentProc = execQ.shift();
+    if (firstRunTime[currentProc.id] === undefined) firstRunTime[currentProc.id] = currentTime;
+  }
+
+  const runTime = Math.min(Q, currentProc.rem);
+  const startT = currentTime;
+  const isGuard = currentProc.wasLarge;
+  currentProc.wasLarge = false;
+
+  if (!ganttData[currentProc.id]) ganttData[currentProc.id] = [];
+  ganttData[currentProc.id].push({start: startT, end: startT + runTime, wasLarge: isGuard});
+
+  currentTime += runTime;
+  currentProc.rem -= runTime;
+  tExec += runTime;
+
+  arriveProcesses(currentTime, pool);
+
+  if (currentProc.rem <= 0) {
+    const msg = `<span class="log-done">✓ ${currentProc.id} done at t=${currentTime}. t_exec=${tExec}</span>`;
+    completed.push(currentProc);
+    currentProc = null;
+    tLarge = calcTLarge();
+    if (tExec >= tLarge && (execQ.length > 0 || waitingQ.length > 0)) {
+      addLog(msg);
+      triggerReset(`t_exec(${tExec}) ≥ t_large(${tLarge}) after completion`);
+      return;
+    }
+    if (execQ.length === 0 && waitingQ.length > 0) moveWQtoEQ('exec queue empty after completion');
+    tLarge = calcTLarge();
+    addLog(msg);
+  } else {
+    if (tExec >= tLarge && tLarge > 0) {
+      const msg = `Ran ${currentProc.id} for ${runTime}u (rem=${currentProc.rem}). <span class="log-reset">t_exec(${tExec}) ≥ t_large(${tLarge}) → reset!</span>`;
+      addLog(msg);
+      execQ.push(currentProc); currentProc = null;
+      triggerReset(`t_exec(${tExec}) ≥ t_large(${tLarge})`);
+      return;
+    } else {
+      addLog(`Ran ${currentProc.id} for ${runTime}u (rem=${currentProc.rem}). t_exec=${tExec} < t_large=${tLarge} → back to execution queue tail.`);
+      execQ.push(currentProc);
+      execQ.sort((a,b) => a.rem - b.rem);
+      currentProc = null;
+      tLarge = calcTLarge();
+    }
+  }
+
+  updateDisplay(buildStatus());
+}
+
+function triggerReset(reason) {
+  moveWQtoEQ('guard reset');
+  execQ.sort((a,b) => a.rem - b.rem);
+
+  if (execQ.length === 0) { tExec = 0; tLarge = calcTLarge(); updateDisplay(buildStatus()); return; }
+
+  const largestIdx = execQ.reduce((mi, p, i, a) => p.rem > a[mi].rem ? i : mi, 0);
+  const largest = execQ.splice(largestIdx, 1)[0];
+  largest.wasLarge = true;
+
+  const Q = getQ();
+  const runTime2 = Math.min(Q, largest.rem);
+  if (firstRunTime[largest.id] === undefined) firstRunTime[largest.id] = currentTime;
+  if (!ganttData[largest.id]) ganttData[largest.id] = [];
+  ganttData[largest.id].push({start: currentTime, end: currentTime + runTime2, wasLarge: true});
+  currentTime += runTime2;
+  largest.rem -= runTime2;
+  tExec = 0;
+
+  const pool = window._pool;
+  arriveProcesses(currentTime, pool);
+
+  if (largest.rem <= 0) {
+    completed.push(largest);
+  } else {
+    execQ.push(largest);
+    execQ.sort((a,b) => a.rem - b.rem);
+  }
+
+  tLarge = calcTLarge();
+
+  const outcome = largest.rem <= 0
+    ? `<span class="log-done">${largest.id} completed!</span>`
+    : `${largest.id} back in exec queue (rem=${largest.rem}).`;
+
+  addLog(`<span class="log-reset">↻ RESET (${reason})</span> — <span class="log-large">${largest.id} ran ${runTime2}u.</span> Queues re-sorted. t_exec=0, t_large=${tLarge}. ${outcome}`);
+
+  if (execQ.length === 0 && waitingQ.length > 0) moveWQtoEQ('after guard reset');
+  tLarge = calcTLarge();
+
+  const pool2 = window._pool;
+  const allDone = pool2.every(p => completed.find(c => c.id === p.id));
+  if (allDone) {
+    updateDisplay('All processes completed! Press Apply & Reset to run again.');
+    showMetrics();
+    return;
+  }
+
+  updateDisplay(buildStatus());
+}
+
+function buildStatus() {
+  const pool = window._pool || [];
+  const allDone = pool.length > 0 && pool.every(p => completed.find(c => c.id === p.id));
+  if (allDone) return 'All processes completed! Press Apply & Reset to run again.';
+  const next = currentProc || execQ[0];
+  const wqCount = waitingQ.length;
+  const eqCount = execQ.length;
+  return `t=${currentTime} | Running: ${currentProc ? currentProc.id+'(rem='+currentProc.rem+')' : '—'} | EQ: ${eqCount} | WQ: ${wqCount} | t_exec=${tExec} / t_large=${tLarge}`;
+}
+
+function addLog(msg) {
+  logLines.unshift(msg);
+  if (logLines.length > 40) logLines.pop();
+  document.getElementById('log-box').innerHTML = logLines.join('<br>');
+}
+
+function autoRun() {
+  if (!simReady) startSim();
+  if (autoTimer) {
+    clearInterval(autoTimer); autoTimer = null;
+    document.getElementById('btn-auto').textContent = 'Auto-run ▶';
+    return;
+  }
+  document.getElementById('btn-auto').textContent = 'Pause ‖';
+  autoTimer = setInterval(() => {
+    const pool = window._pool || [];
+    const allDone = pool.length > 0 && pool.every(p => completed.find(c => c.id === p.id));
+    if (allDone) {
+      clearInterval(autoTimer); autoTimer = null;
+      document.getElementById('btn-auto').textContent = 'Auto-run ▶';
+      return;
+    }
+    stepSim();
+  }, 650);
+}
+
+function updateDisplay(status) {
+  document.getElementById('texec-val').textContent = tExec;
+  document.getElementById('tlarge-val').textContent = tLarge;
+  document.getElementById('time-val').textContent = currentTime;
+  document.getElementById('step-val').textContent = stepCount;
+  document.getElementById('status-bar').textContent = status;
+
+  const wqDiv = document.getElementById('wq-display');
+  wqDiv.innerHTML = waitingQ.length === 0
+    ? '<span style="font-size:12px;color:#666">Empty</span>'
+    : waitingQ.map(p => `<span class="process-pill pill-wq">${p.id} <span style="font-weight:400;opacity:.7">rem=${p.rem}</span></span>`).join('');
+
+  const eqDiv = document.getElementById('eq-display');
+  const maxRem = execQ.length > 0 ? Math.max(...execQ.map(p=>p.rem)) : 0;
+  eqDiv.innerHTML = execQ.length === 0
+    ? '<span style="font-size:12px;color:#666">Empty</span>'
+    : execQ.map(p => {
+        const isLargest = p.rem === maxRem && p.rem > 0;
+        return `<span class="process-pill ${isLargest ? 'pill-large' : 'pill-waiting'}">${p.id} <span style="font-weight:400;opacity:.7">rem=${p.rem}</span></span>`;
+      }).join('');
+
+  const runDiv = document.getElementById('running-display');
+  runDiv.innerHTML = currentProc
+    ? `<span class="process-pill pill-running">${currentProc.id} <span style="font-weight:400;opacity:.7">rem=${currentProc.rem}</span> ▶</span>`
+    : '<span style="font-size:12px;color:#666">Idle</span>';
+
+  const cDiv = document.getElementById('completed-display');
+  cDiv.innerHTML = completed.length === 0
+    ? '<span style="font-size:12px;color:#666">None yet</span>'
+    : completed.map(p => `<span class="process-pill pill-done">${p.id}</span>`).join('');
+
+  renderGantt();
+}
+
+function renderGantt() {
+  const gantt = document.getElementById('gantt-chart');
+  if (currentTime === 0) { gantt.innerHTML = ''; return; }
+  const scale = Math.max(1, Math.min(560 / currentTime, 28));
+  let html = '';
+
+  procDefs.forEach(pd => {
+    const blocks = ganttData[pd.id];
+    if (!blocks || !blocks.length) return;
+    html += `<div class="gantt-row"><div class="gantt-lbl">${pd.id}</div><div style="display:flex;height:28px;flex:1;">`;
+    let prev = 0;
+    blocks.forEach(b => {
+      if (b.start > prev) html += `<div class="gantt-block" style="width:${(b.start-prev)*scale}px;background:transparent;"></div>`;
+      html += `<div class="gantt-block" style="width:${(b.end-b.start)*scale}px;background:${b.wasLarge ? '#FFB74D' : pd.color};opacity:.85;color:#222;">${b.end-b.start}</div>`;
+      prev = b.end;
+    });
+    html += `</div></div>`;
+  });
+
+  if (ganttData['__idle'] && ganttData['__idle'].length) {
+    html += `<div class="gantt-row"><div class="gantt-lbl" style="color:#555">idle</div><div style="display:flex;height:28px;flex:1;">`;
+    ganttData['__idle'].forEach(b => {
+      html += `<div class="gantt-block" style="margin-left:${b.start*scale}px;width:${(b.end-b.start)*scale}px;background:#333;color:#666;">${b.end-b.start}</div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  gantt.innerHTML = html;
+}
+
+function showMetrics() {
+  const pool = window._pool || [];
+  const tbody = document.getElementById('metrics-body');
+  tbody.innerHTML = '';
+  let sw = 0, st = 0, sr = 0;
+  pool.forEach(p => {
+    const done = completed.find(c => c.id === p.id);
+    if (!done) return;
+    const tat = done.finishTime !== undefined ? done.finishTime - p.arrival : currentTime - p.arrival;
+    const finish = done.finishTime !== undefined ? done.finishTime : currentTime;
+    const actualFinish = (() => {
+      const blocks = ganttData[p.id];
+      if (!blocks || !blocks.length) return currentTime;
+      return blocks[blocks.length-1].end;
+    })();
+    const realTAT = actualFinish - p.arrival;
+    const wait = realTAT - p.burst;
+    const resp = (firstRunTime[p.id] !== undefined) ? firstRunTime[p.id] - p.arrival : 0;
+    sw += wait; st += realTAT; sr += resp;
+    const pd = procDefs.find(d => d.id === p.id);
+    const color = pd ? pd.color : '#90CAF9';
+    tbody.innerHTML += `<tr>
+      <td><span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>${p.id}</span></td>
+      <td>${p.burst}</td><td>${p.arrival}</td><td>${actualFinish}</td><td>${realTAT}</td><td>${wait}</td><td>${resp}</td>
+    </tr>`;
+  });
+  const n = pool.length;
+  document.getElementById('avg-wait').textContent = (sw/n).toFixed(2);
+  document.getElementById('avg-tat').textContent  = (st/n).toFixed(2);
+  document.getElementById('avg-resp').textContent = (sr/n).toFixed(2);
+  document.getElementById('metrics-section').style.display = 'block';
+}
+
+renderEditor();
+updateDisplay('Set burst lengths and arrival times above, then press Apply & Reset.');
+</script>
+</body>
+</html>

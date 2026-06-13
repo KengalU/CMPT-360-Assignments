@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hybrid Scheduling Algorithm Simulator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 24px; min-height: 100vh; }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 16px; color: #fff; }
+  button { background: transparent; border: 1px solid #555; color: #e0e0e0; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: background 0.15s; }
+  button:hover { background: #333; }
+  select { padding: 5px 8px; border: 1px solid #555; border-radius: 8px; background: #2a2a2a; color: #e0e0e0; font-size: 13px; }
+  input[type=range] { accent-color: #6b8cff; }
+
+  .process-editor { border: 1px solid #444; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; background: #222; }
+  .process-editor h3 { font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 10px; }
+  .proc-rows { display: flex; flex-direction: column; gap: 8px; }
+  .proc-row { display: flex; align-items: center; gap: 8px; }
+  .proc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .proc-label { width: 28px; font-size: 13px; font-weight: 500; }
+  .proc-row input[type=range] { flex: 1; }
+  .proc-burst-val { width: 28px; font-size: 13px; font-weight: 500; text-align: right; }
+  .proc-remove { background: none; border: none; cursor: pointer; color: #666; font-size: 18px; padding: 0 2px; line-height: 1; }
+  .proc-remove:hover { color: #e05555; }
+  .add-proc-btn { margin-top: 8px; font-size: 12px; padding: 4px 10px; }
+
+  .top-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-group label { font-size: 12px; color: #aaa; }
+  .ctrl-group span { font-size: 13px; font-weight: 500; }
+  .ctrl-group input[type=range] { width: 110px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .vars-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .var-card { background: #2a2a2a; border-radius: 8px; padding: 8px 14px; min-width: 90px; }
+  .var-card .lbl { font-size: 11px; color: #888; }
+  .var-card .val { font-size: 22px; font-weight: 500; }
+  .var-card.red .val { color: #e07050; }
+  .var-card.blue .val { color: #6b9fe0; }
+  .var-card.def .val { color: #e0e0e0; }
+
+  .status-bar { font-size: 13px; padding: 7px 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #aaa; margin-bottom: 12px; }
+
+  .queue-section { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .queue-box { border: 1px solid #444; border-radius: 12px; padding: 10px 12px; background: #222; }
+  .queue-box h3 { font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 8px; }
+  .process-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 12px; margin: 2px; font-weight: 500; border: 1px solid; transition: all 0.2s; }
+  .pill-running { background: #1a3a1a; color: #6fcf6f; border-color: #4CAF50; }
+  .pill-waiting { background: #2a2a2a; color: #e0e0e0; border-color: #555; }
+  .pill-large   { background: #3a2a00; color: #ffb74d; border-color: #FF9800; }
+  .pill-done    { background: #222; color: #666; border-color: #444; text-decoration: line-through; opacity: 0.5; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .gantt-label-row { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .gantt { border: 1px solid #444; border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
+  .gantt-row { display: flex; align-items: center; min-height: 28px; border-bottom: 1px solid #333; }
+  .gantt-row:last-child { border-bottom: none; }
+  .gantt-lbl { width: 32px; font-size: 11px; color: #888; padding: 0 4px; flex-shrink: 0; text-align: center; }
+  .gantt-block { height: 28px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; }
+
+  .log-box { border: 1px solid #444; border-radius: 8px; padding: 8px 10px; background: #1e1e1e; max-height: 120px; overflow-y: auto; font-size: 12px; color: #aaa; line-height: 1.7; margin-bottom: 12px; }
+  .log-reset { color: #e07050; font-weight: 500; }
+  .log-done   { color: #6fcf6f; }
+  .log-large  { color: #ffb74d; font-weight: 500; }
+
+  .section-title { font-size: 12px; color: #888; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+<h1>Hybrid Scheduling Algorithm Simulator</h1>
+
+<div class="process-editor">
+  <h3>Processes — drag to set burst length</h3>
+  <div class="proc-rows" id="proc-rows"></div>
+  <button class="add-proc-btn" onclick="addProcess()">+ Add process</button>
+</div>
+
+<div class="top-row">
+  <div class="ctrl-group">
+    <label>Time quantum (Q)</label>
+    <input type="range" min="1" max="8" value="3" id="quantum-slider" oninput="document.getElementById('q-val').textContent=this.value">
+    <span id="q-val">3</span>
+  </div>
+  <div class="btn-row">
+    <button onclick="startSim()">Apply & Reset ↺</button>
+    <button onclick="stepSim()">Step →</button>
+    <button onclick="autoRun()" id="btn-auto">Auto-run ▶</button>
+  </div>
+</div>
+
+<div class="vars-row">
+  <div class="var-card red"><div class="lbl">t_exec</div><div class="val" id="texec-val">0</div></div>
+  <div class="var-card blue"><div class="lbl">t_large</div><div class="val" id="tlarge-val">0</div></div>
+  <div class="var-card def"><div class="lbl">Time</div><div class="val" id="time-val">0</div></div>
+  <div class="var-card def"><div class="lbl">Step</div><div class="val" id="step-val">0</div></div>
+</div>
+
+<div class="status-bar" id="status-bar">Set burst lengths above, then press Apply & Reset.</div>
+
+<div class="queue-section">
+  <div class="queue-box">
+    <h3>Ready queue (SJF order)</h3>
+    <div id="ready-queue-display" style="min-height:28px;display:flex;flex-wrap:wrap;align-items:center;"></div>
+  </div>
+  <div class="queue-box">
+    <h3>Completed</h3>
+    <div id="completed-display" style="min-height:28px;display:flex;flex-wrap:wrap;align-items:center;"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4CAF50"></div> Running</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#FF9800"></div> Largest (starvation guard)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#90CAF9"></div> Waiting</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#FFB74D"></div> Starvation-guard turn (Gantt)</div>
+</div>
+
+<div class="section-title">Gantt chart</div>
+<div class="gantt" id="gantt-chart"></div>
+<div class="log-box" id="log-box">Log will appear here...</div>
+
+<script>
+const COLORS = ['#90CAF9','#A5D6A7','#FFCC80','#CE93D8','#80DEEA','#F48FB1','#BCAAA4','#FFE082'];
+let procDefs = [
+  {id:'P1',burst:8,color:COLORS[0]},
+  {id:'P2',burst:3,color:COLORS[1]},
+  {id:'P3',burst:12,color:COLORS[2]},
+  {id:'P4',burst:5,color:COLORS[3]},
+  {id:'P5',burst:2,color:COLORS[4]},
+];
+let nextProcNum = 6;
+let queue=[], completed=[], tExec=0, tLarge=0, currentTime=0, stepCount=0;
+let ganttData={}, autoTimer=null, currentProc=null, logLines=[], simReady=false;
+
+function calcTLarge() {
+  const all = currentProc ? [currentProc, ...queue] : [...queue];
+  return all.length > 0 ? Math.max(...all.map(p => p.rem)) : 0;
+}
+
+function renderEditor() {
+  const rows = document.getElementById('proc-rows');
+  rows.innerHTML = '';
+  procDefs.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'proc-row';
+    row.innerHTML = `
+      <div class="proc-dot" style="background:${p.color}"></div>
+      <div class="proc-label">${p.id}</div>
+      <input type="range" min="1" max="20" value="${p.burst}"
+        oninput="procDefs[${i}].burst=parseInt(this.value);document.getElementById('bv${i}').textContent=this.value"
+        style="flex:1">
+      <div class="proc-burst-val" id="bv${i}">${p.burst}</div>
+      <button class="proc-remove" onclick="removeProcess(${i})" title="Remove">×</button>
+    `;
+    rows.appendChild(row);
+  });
+}
+
+function addProcess() {
+  if (procDefs.length >= 8) return;
+  procDefs.push({id:'P'+nextProcNum, burst:5, color:COLORS[procDefs.length % COLORS.length]});
+  nextProcNum++;
+  renderEditor();
+}
+
+function removeProcess(i) {
+  if (procDefs.length <= 1) return;
+  procDefs.splice(i, 1);
+  renderEditor();
+}
+
+function startSim() {
+  clearInterval(autoTimer); autoTimer = null;
+  document.getElementById('btn-auto').textContent = 'Auto-run ▶';
+  queue = procDefs.map(p=>({...p, rem:p.burst, wasLarge:false}));
+  queue.sort((a,b)=>a.rem-b.rem);
+  completed=[]; tExec=0; currentTime=0; stepCount=0; currentProc=null; logLines=[];
+  ganttData={};
+  queue.forEach(p=>{ ganttData[p.id]=[]; });
+  tLarge = calcTLarge();
+  simReady = true;
+  document.getElementById('gantt-chart').innerHTML='';
+  document.getElementById('log-box').textContent='Simulation ready. Press Step or Auto-run.';
+  updateDisplay('Simulation ready. Queue sorted by SJF. Press Step or Auto-run.');
+}
+
+function getQ() { return parseInt(document.getElementById('quantum-slider').value); }
+
+function stepSim() {
+  if (!simReady) { startSim(); return; }
+  if (queue.length===0 && !currentProc) { updateDisplay('All processes completed! Press Apply & Reset to run again.'); return; }
+
+  stepCount++;
+  const Q = getQ();
+  if (!currentProc) { currentProc = queue.shift(); }
+
+  const runTime = Math.min(Q, currentProc.rem);
+  const startT = currentTime;
+  if (!ganttData[currentProc.id]) ganttData[currentProc.id]=[];
+  ganttData[currentProc.id].push({start:startT, end:startT+runTime, wasLarge:currentProc.wasLarge||false});
+  currentProc.wasLarge = false;
+  currentTime += runTime;
+  currentProc.rem -= runTime;
+  tExec += runTime;
+
+  let msg = '';
+
+  if (currentProc.rem <= 0) {
+    msg = `<span class="log-done">✓ ${currentProc.id} done at t=${currentTime}. t_exec=${tExec}</span>`;
+    completed.push(currentProc);
+    currentProc = null;
+    tLarge = calcTLarge();
+    if (queue.length > 0 && tExec >= tLarge) {
+      addLog(msg);
+      triggerReset(Q, `t_exec(${tExec}) ≥ t_large(${tLarge}) after completion`);
+      return;
+    }
+  } else {
+    if (tExec >= tLarge) {
+      msg = `Ran ${currentProc.id} for ${runTime}u (rem=${currentProc.rem}). <span class="log-reset">t_exec(${tExec}) ≥ t_large(${tLarge}) → reset!</span>`;
+      addLog(msg);
+      queue.push(currentProc); currentProc = null;
+      queue.sort((a,b)=>a.rem-b.rem);
+      triggerReset(Q, `t_exec(${tExec}) ≥ t_large(${tLarge})`);
+      return;
+    } else {
+      msg = `Ran ${currentProc.id} for ${runTime}u (rem=${currentProc.rem}). t_exec=${tExec} < t_large=${tLarge} → back to tail.`;
+      queue.push(currentProc);
+      queue.sort((a,b)=>a.rem-b.rem);
+      currentProc = null;
+    }
+  }
+
+  addLog(msg);
+  updateDisplay(buildStatus());
+}
+
+function triggerReset(Q, reason) {
+  if (queue.length===0) { updateDisplay(buildStatus()); return; }
+
+  const largestIdx = queue.reduce((mi,p,i,a)=>p.rem>a[mi].rem?i:mi, 0);
+  const largest = queue.splice(largestIdx, 1)[0];
+  largest.wasLarge = true;
+
+  const runTime2 = Math.min(Q, largest.rem);
+  if (!ganttData[largest.id]) ganttData[largest.id]=[];
+  ganttData[largest.id].push({start:currentTime, end:currentTime+runTime2, wasLarge:true});
+  currentTime += runTime2;
+  largest.rem -= runTime2;
+  tExec = 0;
+
+  if (largest.rem <= 0) {
+    completed.push(largest);
+  } else {
+    queue.push(largest);
+  }
+
+  queue.sort((a,b)=>a.rem-b.rem);
+  tLarge = calcTLarge();
+
+  const outcome = largest.rem <= 0
+    ? `<span class="log-done">${largest.id} completed!</span>`
+    : `${largest.id} back in queue (rem=${largest.rem}).`;
+
+  const msg = `<span class="log-reset">↻ RESET (${reason})</span> — <span class="log-large">${largest.id} ran ${runTime2}u.</span> Queue re-sorted. t_exec=0, t_large=${tLarge}. ${outcome}`;
+  addLog(msg);
+  updateDisplay(buildStatus());
+}
+
+function buildStatus() {
+  if (queue.length===0 && !currentProc) return 'All processes completed! Press Apply & Reset to run again.';
+  const next = currentProc || queue[0];
+  return `t=${currentTime} | Next: ${next ? next.id+' (rem='+next.rem+')' : '—'} | Queue: ${queue.length}`;
+}
+
+function addLog(msg) {
+  logLines.unshift(msg);
+  if (logLines.length > 30) logLines.pop();
+  document.getElementById('log-box').innerHTML = logLines.join('<br>');
+}
+
+function autoRun() {
+  if (!simReady) startSim();
+  if (autoTimer) {
+    clearInterval(autoTimer); autoTimer=null;
+    document.getElementById('btn-auto').textContent='Auto-run ▶';
+    return;
+  }
+  document.getElementById('btn-auto').textContent='Pause ‖';
+  autoTimer = setInterval(()=>{
+    if (queue.length===0 && !currentProc) {
+      clearInterval(autoTimer); autoTimer=null;
+      document.getElementById('btn-auto').textContent='Auto-run ▶';
+      return;
+    }
+    stepSim();
+  }, 650);
+}
+
+function updateDisplay(status) {
+  document.getElementById('texec-val').textContent = tExec;
+  document.getElementById('tlarge-val').textContent = tLarge;
+  document.getElementById('time-val').textContent = currentTime;
+  document.getElementById('step-val').textContent = stepCount;
+  document.getElementById('status-bar').textContent = status;
+
+  const rqDiv = document.getElementById('ready-queue-display');
+  rqDiv.innerHTML = '';
+  const allQ = currentProc ? [currentProc, ...queue] : [...queue];
+  if (allQ.length === 0) {
+    rqDiv.innerHTML = '<span style="font-size:12px;color:#666">Empty</span>';
+  }
+  const maxRem = allQ.length > 0 ? Math.max(...allQ.map(p=>p.rem)) : 0;
+  allQ.forEach((p,i)=>{
+    const pill = document.createElement('span');
+    const isRunning = i===0 && currentProc;
+    const isLargest = p.rem===maxRem && p.rem>0 && !isRunning;
+    pill.className = 'process-pill ' + (isRunning ? 'pill-running' : isLargest ? 'pill-large' : 'pill-waiting');
+    pill.innerHTML = `${p.id} <span style="font-weight:400;opacity:.7">rem=${p.rem}</span>${isRunning?' ▶':''}`;
+    rqDiv.appendChild(pill);
+  });
+
+  const cDiv = document.getElementById('completed-display');
+  cDiv.innerHTML = '';
+  if (completed.length === 0) {
+    cDiv.innerHTML = '<span style="font-size:12px;color:#666">None yet</span>';
+  }
+  completed.forEach(p=>{
+    const pill = document.createElement('span');
+    pill.className = 'process-pill pill-done';
+    pill.textContent = p.id;
+    cDiv.appendChild(pill);
+  });
+
+  renderGantt();
+}
+
+function renderGantt() {
+  const gantt = document.getElementById('gantt-chart');
+  if (currentTime === 0) { gantt.innerHTML=''; return; }
+  const scale = Math.max(1, Math.min(560/currentTime, 28));
+  let html = '';
+  Object.keys(ganttData).forEach(id=>{
+    const blocks = ganttData[id];
+    if (!blocks || !blocks.length) return;
+    const pInfo = procDefs.find(p=>p.id===id) || {color:'#90CAF9'};
+    html += `<div class="gantt-row"><div class="gantt-lbl">${id}</div><div style="display:flex;height:28px;flex:1;">`;
+    let prev = 0;
+    blocks.forEach(b=>{
+      if (b.start > prev) html += `<div class="gantt-block" style="width:${(b.start-prev)*scale}px;background:transparent;"></div>`;
+      html += `<div class="gantt-block" style="width:${(b.end-b.start)*scale}px;background:${b.wasLarge?'#FFB74D':pInfo.color};opacity:.85;color:#222;">${b.end-b.start}</div>`;
+      prev = b.end;
+    });
+    html += `</div></div>`;
+  });
+  gantt.innerHTML = html;
+}
+
+renderEditor();
+updateDisplay('Set burst lengths above, then press Apply & Reset.');
+</script>
+</body>
+</html>
